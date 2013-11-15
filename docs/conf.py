@@ -26,9 +26,13 @@
 
 import sys, os
 
-# This line ensures that ipython_console_highlighting.py can be found
+# These lines ensures that ipython_console_highlighting.py can be found
 # when the docs are being built
-sys.path.append(os.path.dirname(__file__))
+docs_dir = os.path.dirname(__file__) 
+sys.path.append(docs_dir)
+sys.path.append(os.path.join(docs_dir, ".."))	 
+
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
