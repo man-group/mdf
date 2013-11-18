@@ -111,9 +111,9 @@ cdef class MDFContext(object):
     #
     # internal C only methods
     #
-    cdef inline Timer _start_timer(self, object node)
-    cdef inline Timer _stop_timer(self)
-    cdef inline MDFNodeBase _get_calling_node(self, MDFContext prev_ctx=?)
+    cdef Timer _start_timer(self, object node)
+    cdef Timer _stop_timer(self)
+    cdef MDFNodeBase _get_calling_node(self, MDFContext prev_ctx=?)
     cdef MDFContext _shift(MDFContext self, shift_set, int cache_context=?)
     cdef Cookie _activate(self, MDFContext prev_ctx=?, thread_id=?)
     cdef _deactivate(self, Cookie cookie)
@@ -147,7 +147,7 @@ cdef class MDFContext(object):
     cpdef to_dot(self, filename=?, nodes=?, colors=?, all_contexts=?, max_depth=?, rankdir=?)
 
 cpdef shift(MDFNodeBase node, MDFNodeBase target=?, values=?, shift_sets=?)
-cpdef inline MDFContext _get_current_context(thread_id=?)
+cpdef MDFContext _get_current_context(thread_id=?)
 cpdef MDFContext _get_context(ctx_id, MDFContext ctx=?)
 cpdef get_nodes(category=?)
 cpdef make_shift_set(dict shift_set_dict)

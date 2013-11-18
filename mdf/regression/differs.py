@@ -15,6 +15,9 @@ from datetime import datetime
 
 _log = logging.getLogger(__name__)
 
+if sys.version_info[0] > 2:
+    basestring = str
+
 def _to_range(row, col, sheet=None):
     """returns an Excel range string, e.g. 0, 0 => A1"""
     cell = ""

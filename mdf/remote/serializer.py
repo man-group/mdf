@@ -9,16 +9,24 @@ Disable by setting the environment variable 'MDF_PYRO_NO_BZ2=1'
 """
 import Pyro4.core
 import Pyro4.util
-from StringIO import StringIO as StringIO
 import logging
 import bz2
 import os
+import sys
 
-_Serializer = Pyro4.util.Serializer
+if sys.version_info[0] > 2:
+    from io import BytesIO
+else:
+    from StringIO import StringIO as BytesIO
+
+try:
+    _Serializer = Pyro4.util.PickleSerializer
+except AttributeError:
+    _Serializer = Pyro4.util.Serializer
 
 _log = logging.getLogger(__name__)
 
-class MaxSizeStringIO(StringIO):
+class MaxSizeStringIO(BytesIO):
     """raises a MemoryError when trying to write more than max size"""
 
     def __init__(self, max_size=None, buffer=None):
@@ -28,13 +36,13 @@ class MaxSizeStringIO(StringIO):
         args = []
         if buffer is not None:
             args.append(buffer)
-        StringIO.__init__(self, *args)
+        BytesIO.__init__(self, *args)
         self.__max_size = max_size
 
     def write(self, data):
         if self.tell() + len(data) > self.__max_size:
             raise MemoryError
-        StringIO.write(self, data)
+        BytesIO.write(self, data)
 
     def __enter__(self):
         return self
@@ -42,21 +50,21 @@ class MaxSizeStringIO(StringIO):
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
-class BZ2Writer(StringIO):
+class BZ2Writer(BytesIO):
     """Compresses using bz2 on the fly"""
 
     def __init__(self, compresslevel=9):
-        StringIO.__init__(self)
+        BytesIO.__init__(self)
         self.__uncompressed_size = 0
         self.__compressor = bz2.BZ2Compressor(compresslevel)
 
     def write(self, data):
         self.__uncompressed_size += len(data)
-        StringIO.write(self, self.__compressor.compress(data))
+        BytesIO.write(self, self.__compressor.compress(data))
 
     def getvalue(self):
-        StringIO.write(self, self.__compressor.flush())
-        return StringIO.getvalue(self)
+        BytesIO.write(self, self.__compressor.flush())
+        return BytesIO.getvalue(self)
 
     @property
     def uncompressed_size(self):
@@ -84,7 +92,7 @@ class BZ2Reader(object):
         self.__cend = len(data)
 
         # position in the decompressed data
-        self.__dbuf = StringIO()
+        self.__dbuf = BytesIO()
         self.__dpos = 0
 
     def read(self, size=-1):

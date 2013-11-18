@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pa
 import inspect
 import types
+import sys
 import cython
 
 from .nodes import (
@@ -22,6 +23,14 @@ from .context import MDFContext, _get_current_context
 from .ctx_pickle import _unpickle_custom_node, _pickle_custom_node
 from .parser import get_assigned_node_name
 from .common import DIRTY_FLAGS
+
+_python_version = cython.declare(int, sys.version_info[0])
+
+@cython.cfunc
+def _dict_iteritems(d):
+    if _python_version > 2:
+        return iter(d.items())
+    return d.iteritems()
 
 class MDFCustomNodeIteratorFactory(MDFIteratorFactory):
 
@@ -70,7 +79,7 @@ class MDFCustomNodeIterator(MDFIterator):
             if self.is_generator:
                 if not self.value_generator:
                     self.value_generator = self.func()
-                value = self.value_generator.next()
+                value = next(self.value_generator)
             else:
                 value = self.func()
 
@@ -79,7 +88,7 @@ class MDFCustomNodeIterator(MDFIterator):
                 # create the new node type generator and return
                 kwargs = self.custom_node._get_kwargs()
                 self.node_type_generator = self.node_type_func(value, **kwargs)
-                return self.node_type_generator.next()
+                return next(self.node_type_generator)
 
             return self.node_type_generator.send(value)
 
@@ -127,7 +136,7 @@ class MDFCustomNode(MDFEvalNode):
         self._cn_func = self._validate_func(func)
         self._category = category
         self._kwargs = dict(nodetype_func_kwargs)
-        self._kwnodes = dict([(k, v) for (k, v) in nodetype_func_kwargs.iteritems() if isinstance(v, MDFNode)])
+        self._kwnodes = dict([(k, v) for (k, v) in _dict_iteritems(nodetype_func_kwargs) if isinstance(v, MDFNode)])
         self._kwfuncs = {} # reserved for functions added via decorators
 
         # if 'filter_node_value' is in the node type generator args we pass in the value of the filter
@@ -307,7 +316,7 @@ class MDFCustomNode(MDFEvalNode):
         
         # bind the eval nodes (won't do anything if they're already bound)
         self._kwnodes = {}
-        for k, node in other._kwnodes.iteritems():
+        for k, node in _dict_iteritems(other._kwnodes):
             if isinstance(node, MDFEvalNode) and _is_member_of(owner, node):
                 self._kwnodes[k] = node.__get__(None, owner)
             else:
@@ -315,7 +324,7 @@ class MDFCustomNode(MDFEvalNode):
 
         # bind the functions in case they're classmethods
         self._kwfuncs = {}
-        for k, func in other._kwfuncs.iteritems():
+        for k, func in _dict_iteritems(other._kwfuncs):
             if _is_member_of(owner, func):
                 self._kwfuncs[k] = self._bind_function(func, owner)
 
@@ -329,13 +338,13 @@ class MDFCustomNode(MDFEvalNode):
             kwargs = dict(kwargs)
 
             node = cython.declare(MDFNode)
-            for key, node in self._kwnodes.iteritems():
+            for key, node in _dict_iteritems(self._kwnodes):
                 if key not in self.nodetype_node_kwargs:
                     kwargs[key] = node()
                 else:
                     kwargs[key] = node
 
-            for key, value in self._kwfuncs.iteritems():
+            for key, value in _dict_iteritems(self._kwfuncs):
                 kwargs[key] = value()
 
         # if the filter value should be passed in as a kwarg
@@ -473,7 +482,7 @@ class MDFCustomNodeMethod(object):
                             self._node_cls,
                             filter,
                             category,
-                            frozenset(nodetype_func_kwargs.iteritems()))
+                            frozenset(_dict_iteritems(nodetype_func_kwargs)))
         try:
             derived_node = self._derived_nodes[derived_node_key]
         except KeyError:
@@ -890,7 +899,7 @@ class MDFDelayNode(MDFCustomNode):
                     generator = alt_data.generator
                 if not generator:
                     generator = self._dn_func()
-                value = generator.next()
+                value = next(generator)
             else:
                 value = self._dn_func()
 
@@ -1529,7 +1538,7 @@ class _rowiternode(MDFIterator):
 
                 # set up the iterator
                 self._iter = iter(data.index)
-                self._current_index = self._iter.next()
+                self._current_index = next(self._iter)
                 self._current_value = self._data.xs(self._current_index)
 
             elif isinstance(data, pa.WidePanel):
@@ -1546,13 +1555,13 @@ class _rowiternode(MDFIterator):
 
                 # set up ther iterator
                 self._iter = iter(data.major_axis)
-                self._current_index = self._iter.next()
+                self._current_index = next(self._iter)
                 self._current_value = self._data.major_xs(self._current_index)
 
             elif isinstance(data, pa.Series):
                 self._is_series = True
-                self._iter = data.iteritems()
-                self._current_index, self._current_value = self._iter.next()
+                self._iter = _dict_iteritems(data)
+                self._current_index, self._current_value = next(self._iter)
 
             else:
                 clsname = type(data)
@@ -1605,7 +1614,7 @@ class _rowiternode(MDFIterator):
             try:
                 # TODO: once we upgrade pandas use the iterrows method
                 self._prev_value = self._current_value
-                self._current_index = self._iter.next()
+                self._current_index = next(self._iter)
                 self._current_value = self._data.xs(self._current_index)
             except StopIteration:
                 if self._ffill:
@@ -1634,7 +1643,7 @@ class _rowiternode(MDFIterator):
             try:
                 # TODO: once we upgrade pandas use the iterrows method
                 self._prev_value = self._current_value
-                self._current_index = self._iter.next()
+                self._current_index = next(self._iter)
                 self._current_value = self._data.major_xs(self._current_index)
             except StopIteration:
                 if self._ffill:
@@ -1662,7 +1671,7 @@ class _rowiternode(MDFIterator):
             # advance to the next item in the series
             try:
                 self._prev_value = self._current_value
-                self._current_index, self._current_value = self._iter.next()
+                self._current_index, self._current_value = next(self._iter)
             except StopIteration:
                 if self._ffill:
                     return self._prev_value
@@ -1828,7 +1837,7 @@ def _applynode(value, func, args=(), kwargs={}):
         new_args.append(arg)
 
     new_kwargs = {}
-    for key, value in kwargs.iteritems():
+    for key, value in _dict_iteritems(kwargs):
         if isinstance(value, MDFNode):
             value = value()
         new_kwargs[key] = value
@@ -1952,5 +1961,9 @@ class Op(object):
             args = (rhs,)
         return self.lhs.applynode(func=self.op, args=args)
 
-for op in ("__add__", "__sub__", "__mul__", "__div__", "__neg__"):
-    MDFNode._additional_attrs_[op] = Op(getattr(operator, op)) 
+if sys.version_info[0] <= 2:
+    for op in ("__add__", "__sub__", "__mul__", "__div__", "__neg__"):
+        MDFNode._additional_attrs_[op] = Op(getattr(operator, op)) 
+else:
+    for op in ("__add__", "__sub__", "__mul__", "__truediv__", "__neg__"):
+        MDFNode._additional_attrs_[op] = Op(getattr(operator, op))

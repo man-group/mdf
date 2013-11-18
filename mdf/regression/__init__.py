@@ -12,7 +12,6 @@ import sys
 import os
 import getpass
 import logging
-import cPickle
 import atexit
 import pkg_resources
 import tempfile
@@ -25,6 +24,12 @@ from subprocess import Popen, PIPE, STDOUT
 from ..context import MDFContext
 from ..nodes import evalnode
 from .differs import *
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 
 # Import Pyro from the remote package to ensure that the serializer patching 
 # and configuration that we do there gets done
@@ -47,6 +52,8 @@ _python_exes = {
     "linux2"    : "%s/virtualEnvs/%%s/bin/python" % (
                     os.environ.get("HOME", "/users/%s" % getpass.getuser()))
 }
+
+NoneType = type(None)
 
 _running_processes = []
 @atexit.register
@@ -149,7 +156,7 @@ def _start_pyro_subprocess(python_exe, side, modulenames=[]):
     stderr_thread.start()
 
     # send the data to the new process and get the result from the pipe
-    child_process.stdin.write(cPickle.dumps(start_data))
+    child_process.stdin.write(pickle.dumps(start_data))
     child_process.stdin.close()
 
     # read the URI from the child stdout
@@ -266,18 +273,18 @@ def run(date_range, differs, lhs, rhs, filter=None, ctx=None,
     shutdown_lhs = False
     shutdown_rhs = False
 
-    if isinstance(lhs, (basestring, types.NoneType)) \
-    and isinstance(rhs, (basestring, types.NoneType)):
+    if isinstance(lhs, (basestring, NoneType)) \
+    and isinstance(rhs, (basestring, NoneType)):
         # get both remote contexts from the virtual env name
         lhs, rhs = get_contexts(lhs, rhs, ctx=ctx,
                                 lhs_modulenames=lhs_modulenames,
                                 rhs_modulenames=rhs_modulenames)
         shutdown_lhs = shutdown_rhs = True
-    elif isinstance(lhs, (basestring, types.NoneType)):
+    elif isinstance(lhs, (basestring, NoneType)):
         # only need the lhs, rhs must already be a remote ctx
         lhs = _get_context(lhs, ctx, side="LHS", modulenames=lhs_modulenames)
         shutdown_lhs = True
-    elif isinstance(rhs, (basestring, types.NoneType)):
+    elif isinstance(rhs, (basestring, NoneType)):
         # only need the rhs, lhs must already be a remote ctx
         rhs = _get_context(rhs, ctx, side="RHS", modulenames=rhs_modulenames)
         shutdown_rhs = True

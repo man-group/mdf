@@ -4,6 +4,7 @@ the main process.
 """
 import os
 import logging
+import sys
 from decorator import decorator
 from collections import namedtuple
 from .serializer import Serializer
@@ -110,8 +111,9 @@ def poll_messages():
             # don't block on data, but once we have the data wait for the compressed flag
             data = _conn_details.sink.recv(flags=zmq.NOBLOCK)
             compressed = _conn_details.sink.recv_json()
-        except zmq.ZMQError, e:
+        except zmq.ZMQError:
             # still waiting for data?
+            e = sys.exc_info()[1]
             if e.errno == zmq.EAGAIN:
                 return
             raise

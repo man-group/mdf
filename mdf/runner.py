@@ -31,9 +31,9 @@ def _create_context(date, values={}, ctx=None, **kwargs):
     if ctx is None:
         ctx = MDFContext(date)
     ctx.set_date(date)
-    for node, value in values.iteritems():
+    for node, value in values.items():
         ctx.set_value(node, value)
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
         ctx.set_value(key, value)
     return ctx
 
@@ -177,7 +177,7 @@ def _run_multiprocess(date_range, callbacks, shifts, filter, num_processes, unsh
     """
     process each context in a pool of processes - called from run
     """
-    from remote import Pyro4, SerializedContext, get_daemon, messaging
+    from .remote import Pyro4, SerializedContext, get_daemon, messaging
     import select
 
     for callback in callbacks:
@@ -217,7 +217,7 @@ def _run_multiprocess(date_range, callbacks, shifts, filter, num_processes, unsh
     sys.frozen = False
     try:
         # create the pool of processes and pyro servers
-        promises = [Pyro4.Future(start_proc_thread_func)() for _ in xrange(num_processes)]
+        promises = [Pyro4.Future(start_proc_thread_func)() for _ in range(num_processes)]
         processes = map(lambda promise: promise.value, promises)
 
     finally:
@@ -391,8 +391,8 @@ def scenario(date_range,
     # build a numpy array of the results
     array = np.ndarray(shape=(len(y_shifts), len(x_shifts)), dtype=dtype)
     ctx_iter = iter(contexts)
-    for y in xrange(len(y_shifts)):
-        for x in xrange(len(x_shifts)):
+    for y in range(len(y_shifts)):
+        for x in range(len(x_shifts)):
             ctx = ctx_iter.next()
             array[y][x] = collector.get_values(ctx)[0]
 

@@ -185,8 +185,8 @@ class NodeTest(unittest.TestCase):
         self._run(DelayNodeTest.delay_test, DelayNodeTest.delay_test_lazy)
         value =  self.ctx[DelayNodeTest.delay_test]
         value_lazy =  self.ctx[DelayNodeTest.delay_test_lazy]
-        self.assertEqual(list(value), range(1, len(self.daterange)+1))
-        self.assertEqual(list(value_lazy), range(1, len(self.daterange)+1))
+        self.assertEqual(list(value), list(range(1, len(self.daterange)+1)))
+        self.assertEqual(list(value_lazy), list(range(1, len(self.daterange)+1)))
 
     def test_ffillnode(self):
         self._run(ffill_queue)
@@ -202,7 +202,7 @@ class NodeTest(unittest.TestCase):
 
     def test_datanode_ffill(self):
         data = pd.Series(range(len(self.daterange)), self.daterange, dtype=float)
-        data = data[[bool(i % 2) for i in xrange(len(data.index))]]
+        data = data[[bool(i % 2) for i in range(len(data.index))]]
 
         expected = data.reindex(self.daterange, method="ffill")
         expected[np.isnan(expected)] = np.inf
@@ -267,8 +267,9 @@ class NodeTest(unittest.TestCase):
         for t in date_range:
             self.ctx.set_date(t)
             for node in nodes:
-                self.ctx[node]
+                self.ctx[node] 
                 
     def _run(self, *nodes):
         self._run_for_daterange(self.daterange, *nodes)
+
 

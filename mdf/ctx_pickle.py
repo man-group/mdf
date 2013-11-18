@@ -1,7 +1,6 @@
 """
 Functions to provide pickle support to MDF classes
 """
-import __builtin__
 from nodes import MDFNode, MDFVarNode, NodeState
 from context import MDFContext, ShiftSet
 import cython
@@ -9,6 +8,12 @@ import sys
 import logging
 import os
 import struct
+
+import sys
+if sys.version_info[0] > 2:
+    from builtins import __import__
+else:
+    from __builtin__ import __import__
 
 _log = logging.getLogger(__name__)
 
@@ -25,53 +30,54 @@ _pickle_version = int(os.environ.get("MDF_PICKLE_VERSION", 0))
 # the standard pickle.Unpickler doesn't handle NaNs
 # so we override the load_float method here
 #
-import pickle
+if sys.version_info[0] <= 2:
+    import pickle
 
-try:
-    import numpy as np
-    nan = np.nan
-    inf = np.inf
-except ImportError:
-    nan = float("nan")
-    inf = float("inf")
+    try:
+        import numpy as np
+        nan = np.nan
+        inf = np.inf
+    except ImportError:
+        nan = float("nan")
+        inf = float("inf")
 
-_special_floats = cython.declare(dict, {
-    # NaN
-    "nan"       : nan,
-    "1.#QNAN"   : nan,
-    "-1.#QNAN"  : nan,
-    # Quiet NaN
-    "1.#IND"    : nan,
-    "-1.#IND"   : nan,
-    # INF
-    "1.#INF"    : inf,
-    "-1.#INF"   : -inf,
-})
+    _special_floats = cython.declare(dict, {
+        # NaN
+        "nan"       : nan,
+        "1.#QNAN"   : nan,
+        "-1.#QNAN"  : nan,
+        # Quiet NaN
+        "1.#IND"    : nan,
+        "-1.#IND"   : nan,
+        # INF
+        "1.#INF"    : inf,
+        "-1.#INF"   : -inf,
+    })
 
-_special_binfloats = cython.declare(dict, {
-    struct.pack(">d", nan)   : nan,
-    struct.pack(">d", inf)   : inf,
-    struct.pack(">d", -inf)  : -inf,
-})
+    _special_binfloats = cython.declare(dict, {
+        struct.pack(">d", nan)   : nan,
+        struct.pack(">d", inf)   : inf,
+        struct.pack(">d", -inf)  : -inf,
+    })
 
-def load_float(unpickler):
-    value = unpickler.readline()[:-1]
-    special_value = _special_floats.get(value, None)
-    if special_value is not None:
-        unpickler.append(special_value)
-        return
-    unpickler.append(float(value))
+    def load_float(unpickler):
+        value = unpickler.readline()[:-1]
+        special_value = _special_floats.get(value, None)
+        if special_value is not None:
+            unpickler.append(special_value)
+            return
+        unpickler.append(float(value))
 
-def load_binfloat(unpickler, unpack=struct.unpack):
-    buf = unpickler.read(8)
-    special_value = _special_binfloats.get(buf, None)
-    if special_value is not None:
-        unpickler.append(special_value)
-        return
-    unpickler.append(unpack('>d', buf)[0])  
+    def load_binfloat(unpickler, unpack=struct.unpack):
+        buf = unpickler.read(8)
+        special_value = _special_binfloats.get(buf, None)
+        if special_value is not None:
+            unpickler.append(special_value)
+            return
+        unpickler.append(unpack('>d', buf)[0])  
 
-pickle.Unpickler.dispatch[pickle.FLOAT] = load_float
-pickle.Unpickler.dispatch[pickle.BINFLOAT] = load_binfloat
+    pickle.Unpickler.dispatch[pickle.FLOAT] = load_float
+    pickle.Unpickler.dispatch[pickle.BINFLOAT] = load_binfloat
 
 class MissingNodeError(Exception):
     pass
@@ -313,7 +319,7 @@ def _unpickle_node(node_name, modulename, is_bound, vardata=None):
 
             # TODO: we have to reference __builtin__ for now due to the way the import hook works
             # in the cluster. Get rid of it once a more stable import hook is implemented.
-            __builtin__.__import__(modulename)
+            __import__(modulename)
 
     # get the node and return it (there's no state to recover)
     try:

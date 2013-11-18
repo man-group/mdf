@@ -15,7 +15,7 @@ cdef class cqueue(object):
     cpdef popleft(self)
     cpdef clear(self)
 
-    cpdef sort(self, cmp=?, key=?, reverse=?)
+    cpdef sort(self, key=?, reverse=?)
 
 cdef inline cqueue_push(cqueue self, x):
     """push an item on the queue"""
@@ -52,5 +52,5 @@ cdef inline cqueue_clear(cqueue self):
     self._start = 0
     self._end = 0
 
-cdef inline cqueue_sort(cqueue self, cmp, key, reverse):
-    return self.sort(cmp, key, reverse)
+cdef inline cqueue_sort(cqueue self, key, reverse):
+    return self.sort(key, reverse)

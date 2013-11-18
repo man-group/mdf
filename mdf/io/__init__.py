@@ -2,6 +2,7 @@
 Functions for saving and loading MDF objects.
 """
 import os
+import sys
 import logging
 import shutil
 from .simplezipfile import SimpleZipFile
@@ -11,6 +12,9 @@ from gzip import GzipFile
 import pickle
 
 _log = logging.getLogger(__name__)
+
+if sys.version_info[0] > 2:
+    basestring = str
 
 # access via the MDFContext.save method
 def save_context(ctx, filename, start_date=None, end_date=None):

@@ -46,8 +46,10 @@ class cqueue(object):
         cqueue_clear(self)
         self._queue = [None] * self._size
 
-    def sort(self, cmp=None, key=None, reverse=False):
-        self._queue[self._start:self._end] = sorted(self._queue[self._start:self._end], cmp, key, reverse)
+    def sort(self, key=None, reverse=False):
+        self._queue[self._start:self._end] = sorted(self._queue[self._start:self._end],
+                                                    key=key,
+                                                    reverse=reverse)
 
 """
 #
@@ -65,8 +67,8 @@ cqueue_popleft = lambda q: q.popleft()
 cqueue_len = lambda q: len(q)
 cqueue_clear = lambda q: q.clear()
 
-def cqueue_sort(queue, cmp, key, reverse):
-    sorted_queue = sorted(queue, cmp, key, reverse)
+def cqueue_sort(queue, key, reverse):
+    sorted_queue = sorted(queue, key=key, reverse=reverse)
     queue.clear()
     queue.extend(sorted_queue) 
 """

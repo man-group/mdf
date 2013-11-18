@@ -1,21 +1,24 @@
 import time
 import itertools
-import thread
 import os
 from datetime import datetime
 import cython
 import warnings
+import sys
 from .common import DIRTY_FLAGS
 from . import io
 
 # this is usually cimported in context.pxd
 # uncomment if not compiling with Cython
 #from cqueue import *
+#import thread
 #PyThread_get_thread_ident = thread.get_ident
 
 DIRTY_FLAGS_NONE = cython.declare(int, DIRTY_FLAGS.NONE)
 DIRTY_FLAGS_ALL  = cython.declare(int, DIRTY_FLAGS.ALL)
 DIRTY_FLAGS_TIME = cython.declare(int, DIRTY_FLAGS.TIME)
+
+_python_version = cython.declare(int, sys.version_info[0])
 
 # imported when MDFContext is constructed
 MDFNode = None
@@ -322,7 +325,7 @@ class MDFContext(object):
         _shift_value: value of shifted node when _shift_parent is set
         """
         self._finalized = False
-        self._id = self._id_obj = _ctx_id_counter.next()
+        self._id = self._id_obj = next(_ctx_id_counter)
         self._now = now
         self._incrementally_updated_nodes = {}
         self._has_incrementally_updated_nodes = False
@@ -450,8 +453,8 @@ class MDFContext(object):
     def __str__(self):
         if self._shift_set:
             # don't use ctx.get_value here as it adds dependencies
-            shifts = list(self._shift_set.items())
-            shifts.sort(lambda a, b: cmp(a[0].name, b[0].name))
+            shifts = sorted([(node.name, node, shift) for (node, shift) in self._shift_set.items()])
+            shifts = [(node, shift) for (name, node, shift) in shifts]
             shifts_strs = []
 
             for node, value in shifts:
@@ -544,9 +547,13 @@ class MDFContext(object):
         return self._shift_set
 
     def get_shifted_contexts(self):
+        if _python_version > 2:
+            return list(self._shifted_contexts.keys())
         return self._shifted_contexts.keys()
 
     def iter_shifted_contexts(self):
+        if _python_version > 2:
+            return self._shifted_contexts.keys()
         return self._shifted_contexts.iterkeys()
 
     @classmethod

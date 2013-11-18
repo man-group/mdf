@@ -1,6 +1,11 @@
 import unittest
 from mdf.builders.basic import CSVWriter, DataFrameBuilder
-from cStringIO import StringIO
+import sys
+
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from cStringIO import StringIO
 
 class BasicTest(unittest.TestCase):
     nodes = [1,2,3,4]

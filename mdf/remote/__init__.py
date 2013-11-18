@@ -199,10 +199,10 @@ def start_server(name=None, pipe=None):
         ns = Pyro4.locateNS()
         ns.register(name, uri)
 
-    print "mdf.remote server started"
-    print "URI=%s" % uri
+    print ("mdf.remote server started")
+    print ("URI=%s" % uri)
     if name:
-        print "Name=%s" % name
+        print ("Name=%s" % name)
     sys.stdout.flush()
 
     if pipe:

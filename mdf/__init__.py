@@ -52,7 +52,7 @@ __all__ = [
     "_shift"
 ]
 
-from context import (
+from .context import (
     MDFContext,
     shift,
     get_nodes,
@@ -63,7 +63,7 @@ from context import (
     _shift,
 )
 
-from nodes import (
+from .nodes import (
     varnode,
     vargroup,
     evalnode,
@@ -71,7 +71,7 @@ from nodes import (
     enable_trace
 )
 
-from nodetypes import (
+from .nodetypes import (
     nodetype,
     queuenode,
     delaynode,
@@ -86,7 +86,7 @@ from nodetypes import (
     lookaheadnode,
 )
 
-from runner import (
+from .runner import (
     run,
     to_csv,
     plot,
@@ -97,21 +97,21 @@ from runner import (
     get_final_values
 )
 
-from builders import (
+from .builders import (
     CSVWriter,
     DataFrameBuilder,
     FinalValueCollector,
     NodeLogger,
 )
 
-from remote.serializer import (
+from .remote.serializer import (
     disable_custom_pyro_serialization
 )
 
-import context
+from . import context
 context._lazy_imports()
 
-import nodes
+from . import nodes
 nodes._lazy_imports()
 
 #

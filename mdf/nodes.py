@@ -85,14 +85,20 @@ def _get_calling_module_and_class():
 
     return None, None
 
+if sys.version_info[0] > 2:
+    import builtins
+    TypeType = builtins.type
+else:
+    TypeType = types.TypeType
+
 def _isgeneratorfunction(func):
     # see inpect.isgeneratorfunction
     # reproduced here to avoid breaking out of cython when
     # evaluating nodes
     if (isinstance(func, (types.FunctionType, types.MethodType)) 
-    and func.func_code.co_flags & inspect.CO_GENERATOR):
+    and func.__code__.co_flags & inspect.CO_GENERATOR):
         return True
-    elif isinstance(func, types.TypeType) \
+    elif isinstance(func, TypeType) \
     and issubclass(func, MDFIterator):
         return True
     elif isinstance(func, MDFIteratorFactory):
@@ -290,10 +296,10 @@ class MDFCallable(object):
         func = self.callable
 
         if isinstance(func, types.FunctionType):
-            if func.func_code.co_argcount == 0:
+            if func.__code__.co_argcount == 0:
                 func = staticmethod(func).__get__(instance, owner)
 
-            if func.func_code.co_argcount == 1:
+            if func.__code__.co_argcount == 1:
                 func = classmethod(func).__get__(instance, owner)
 
         elif isinstance(func, (classmethod, staticmethod, MDFCallable, MDFEvalNode)):
@@ -481,6 +487,11 @@ class MDFNode(MDFNodeBase):
     def __div__(lhs, rhs):
         if isinstance(lhs, MDFNode):
             return MDFNode._commutative_binop("__div__", lhs, rhs)
+        return (_one_node / rhs) * lhs
+
+    def __truediv__(lhs, rhs):
+        if isinstance(lhs, MDFNode):
+            return MDFNode._commutative_binop("__truediv__", lhs, rhs)
         return (_one_node / rhs) * lhs
     
     def __neg__(self):
@@ -1432,10 +1443,10 @@ class MDFEvalNode(MDFNode):
             return func
 
         if isinstance(func, types.FunctionType):
-            if func.func_code.co_argcount == 0:
+            if func.__code__.co_argcount == 0:
                 return staticmethod(func).__get__(None, owner)
 
-            if func.func_code.co_argcount == 1:
+            if func.__code__.co_argcount == 1:
                 return classmethod(func).__get__(None, owner)
 
             raise Exception("Node functions aren't expected to have parameters")
@@ -1472,7 +1483,7 @@ class MDFEvalNode(MDFNode):
             for cls in owner.mro():
                 # this slightly cumbersome check is to avoid testing equality with any objects
                 # that don't return bools when compared (eg pandas Series and DataFrames)
-                if self in [x for x in cls.__dict__.itervalues() if isinstance(x, self.__class__)]:
+                if self in [x for x in cls.__dict__.values() if isinstance(x, self.__class__)]:
                     base_cls = cls
                     break
 
@@ -1491,7 +1502,7 @@ class MDFEvalNode(MDFNode):
         """return the node name from a function"""
         if isinstance(func, (staticmethod, classmethod)):
             # staticmethods and classmethods don't have names until they're bound to a class
-            return "%s.%d" % (func.__class__.__name__, self._staticmethod_counter.next())
+            return "%s.%d" % (func.__class__.__name__, next(self._staticmethod_counter))
         return _get_func_name(func)
 
     def _validate_func(self, func):
@@ -1525,12 +1536,12 @@ class MDFEvalNode(MDFNode):
 
             if prev_date is not None:
                 date_cmp = cython.declare(int)
-                date_cmp = cmp(prev_date, ctx._now)
+                date_cmp = 0 if prev_date == ctx._now else (-1 if prev_date < ctx._now else 1)
                 if date_cmp == 0: # prev_date == ctx._now
                     self._touch(node_state, DIRTY_FLAGS_ALL, True)
                     return prev_value
 
-                if date_cmp < 1: # prev_date < ctx._now
+                if date_cmp < 0: # prev_date < ctx._now
                     # if a filter's set check if the previous value can be re-used
                     if self._filter_func is not None:
                         if _profiling_enabled:
@@ -1553,9 +1564,9 @@ class MDFEvalNode(MDFNode):
 
                     if _profiling_enabled:
                         with ctx._profile(self):
-                            new_value = node_state.generator.next()
+                            new_value = next(node_state.generator)
                     else:
-                        new_value = node_state.generator.next()
+                        new_value = next(node_state.generator)
 
                     return new_value
 
@@ -1578,9 +1589,9 @@ class MDFEvalNode(MDFNode):
             # evaluate the generator
             if _profiling_enabled:
                 with ctx._profile(self) as timer:
-                    value = gen.next()
+                    value = next(gen)
             else:
-                value = gen.next()
+                value = next(gen)
 
             node_state.generator = iter(gen)
 
@@ -1675,7 +1686,7 @@ class MDFEvalNode(MDFNode):
         # for the next loop than if they were in a random order.
         def get_shift_degree(x):
             return len(x.get_shift_set())
-        cqueue_sort(all_shifted_ctxs, None, get_shift_degree, False)
+        cqueue_sort(all_shifted_ctxs, get_shift_degree, False)
 
         best_match_state = cython.declare(NodeState)
         best_match_state = self._get_state(best_match)

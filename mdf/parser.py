@@ -109,7 +109,7 @@ def get_assigned_node_name(nodetype="varnode", stack_level=1):
 
             # split the line into the tokens making up the node declaration, and the first
             # one is always the variable name
-            sub_tokens, start, end = decl_expr.scanString(statement).next()
+            sub_tokens, start, end = next(decl_expr.scanString(statement))
             name = sub_tokens[0]
             return name
 

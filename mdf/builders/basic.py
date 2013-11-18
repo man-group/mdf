@@ -12,6 +12,9 @@ import matplotlib.pyplot as pp
 import sys
 import types
 
+if sys.version_info[0] > 2:
+    basestring = str
+
 def _get_labels(node, label=None, value=None):
     """
     returns a list of lables the same length as value, if value is

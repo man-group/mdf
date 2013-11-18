@@ -24,7 +24,7 @@ class RemoteTest(unittest.TestCase):
     def test_multiprocess_run(self):
         # create a few shifts
         shifts = []
-        for i in xrange(10):
+        for i in range(10):
             shifts.append({A: i, B: i * 2})
 
         date_range = pd.bdate_range(datetime(1970, 1, 1), periods=5)
@@ -55,5 +55,5 @@ class RemoteTest(unittest.TestCase):
             sync_df = sync_df_builder.get_dataframe(ctx)
             self.assertEquals(df, sync_df)
 
-        print "Took %fs using %d processes" % ((end_time - start_time), num_processes)
-        print "Took %fs using 1 process" % (sync_end_time - sync_start_time)
+        print ("Took %fs using %d processes" % ((end_time - start_time), num_processes))
+        print ("Took %fs using 1 process" % (sync_end_time - sync_start_time))
