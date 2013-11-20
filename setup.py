@@ -50,8 +50,15 @@ if __name__ == "__main__":
         scripts=glob("bin/*.py"),
         install_requires=[
             'Pyro4',
+            'Cython',
+            'numpy',
+            'wxPython',
+            'decorator',
             'pandas',
             'pyparsing',
+            'argparse',
+            'matplotlib',
+            'Pyro4',
             'xlwt',
         ],
         extras_require={
