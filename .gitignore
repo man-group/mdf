@@ -1,0 +1,7 @@
+*.pyc
+*.pyd
+*.c
+*.h
+.idea
+build
+mdf.egg-info
