@@ -3,5 +3,6 @@
 *.c
 *.h
 .idea
+*.ipynb
 build
 mdf.egg-info

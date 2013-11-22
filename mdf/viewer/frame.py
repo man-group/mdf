@@ -9,6 +9,7 @@ import wx.lib.agw.aui as aui
 import wx.gizmos as gizmos
 import os
 import sys
+import logging
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot
@@ -19,6 +20,8 @@ from ..builders import DataFrameBuilder
 from ..nodes import MDFVarNode
 import excel
 import traceback
+
+_logger = logging.getLogger(__name__)
 
 from panels import (
     NodeProperties,
@@ -62,6 +65,7 @@ use help(...) for more help on any functions
 use ctrl+up/down to scroll through your command history
 """.lstrip()
 
+
 class ViewerRootNode(MDFVarNode):
     """
     specialized node for refreshing the tree view when it's dirtied
@@ -84,6 +88,7 @@ class ViewerRootNode(MDFVarNode):
             except wx.PyDeadObjectError:
                 self.frame = None
         self.touch(ctx)
+
 
 class TreeNode(object):
     """
@@ -160,6 +165,7 @@ class TreeNode(object):
     def __ne__(self, other):
         return not other or self.id != other.id
 
+
 def _apply_filters(nodes_and_ctxs, ctx_filter, category_filter):
     """
     takes a list of nodes and contexts and removes nodes that don't match the
@@ -212,6 +218,82 @@ def _apply_filters(nodes_and_ctxs, ctx_filter, category_filter):
             unfiltered.extend(node.get_dependencies(ctx))
 
     return nodes_and_ctxs
+
+
+def _ipython_active():
+    """return true if in an active IPython session"""
+    try:
+        import IPython
+    except ImportError:
+        return False
+
+    try:
+        if IPython.__version__ >= "0.12":
+            return __IPYTHON__
+        return __IPYTHON__active
+    except NameError:
+        return False
+
+
+def _pydev_attach():
+    """attempt to connect or re-connect to the pydev debugger"""
+    import threading
+    import time
+    import glob
+
+    try:
+        import pydevd
+        import pydevd_tracing
+    except ImportError:
+        # look for a PyDev src folder
+        program_files = os.environ.get("PROGRAMFILES", r"C:\Program Files (x86)")
+        pattern = r"%s\Eclipse\plugins\org.python.pydev.debug_*\pysrc" % program_files
+        folders = sorted(glob.glob(pattern), reverse=True)
+        if folders:
+            if folders[0] not in sys.path:
+                sys.path.append(folders[0])
+
+        # try to import again
+        import pydevd
+        import pydevd_tracing
+
+    if not _ipython_active():
+        # remove any redirection
+        if getattr(sys, "_pydev_orig_stdout", None) is None:
+            sys._pydev_orig_stdout = sys.stdout
+        if getattr(sys, "_pydev_orig_stderr", None) is None:
+            sys._pydev_orig_stderr = sys.stderr
+
+        sys.stdout = sys._pydev_orig_stdout
+        sys.stderr = sys._pydev_orig_stderr
+
+    # stop any existing debugger
+    dbg = pydevd.GetGlobalDebugger()
+    if dbg:
+        dbg.FinishDebuggingSession()
+        time.sleep(0.1)
+        pydevd_tracing.SetTrace(None)
+
+        # remove any additional info for the current thread
+        try:
+            del threading.currentThread().__dict__["additionalInfo"]
+        except KeyError:
+            pass
+
+        pydevd.SetGlobalDebugger(None)
+        pydevd.connected = False
+        time.sleep(0.1)
+
+    # do this a couple of times as when re-connecting the first doesn't work
+    _logger.info("Attempting to attach to the pydev debugger")
+    if not ipython_active():
+        pydevd.settrace(stdoutToServer=True, stderrToServer=True, suspend=False)
+        pydevd.settrace(stdoutToServer=True, stderrToServer=True, suspend=False)
+    else:
+        pydevd.settrace(stdoutToServer=False, stderrToServer=False, suspend=False)
+        pydevd.settrace(stdoutToServer=False, stderrToServer=False, suspend=False)
+    _logger.info("Attached to PyDev")
+
 
 class MDFViewerFrame(wx.Frame):
 
@@ -316,9 +398,11 @@ class MDFViewerFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExit, id=wx.ID_EXIT)
 
         tools_menu = wx.Menu()
+        pydev_attach = tools_menu.Append(wx.NewId(), "Attach to PyDev")
         pycrust = tools_menu.Append(wx.NewId(), "Open PyCrust")
         mb.Append(tools_menu, "&Tools")
 
+        self.Bind(wx.EVT_MENU, self.OnPyDevAttach, id=pydev_attach.Id)
         self.Bind(wx.EVT_MENU, self.OnOpenPyCrust, id=pycrust.Id)
 
         windows_menu = wx.Menu()
@@ -341,7 +425,7 @@ class MDFViewerFrame(wx.Frame):
             "windows_properties"    : node_props.Id,
             "windows_source"        : node_source.Id,
             "windows_value"         : node_value.Id,
-            "pydev_attach"          : pydev_attatch.Id,
+            "pydev_attach"          : pydev_attach.Id,
         }
         
         self.SetMenuBar(mb)
@@ -661,6 +745,12 @@ class MDFViewerFrame(wx.Frame):
                                                     Float().
                                                     FloatingSize((1000, 800)))
         self._mgr.Update()
+
+    def OnPyDevAttach(self, event):
+        try:
+            _pydev_attach()
+        except Exception, e:
+            wx.MessageBox("Unable to attach to PyDev: %s" % e)
 
     def OnPaneClose(self, event):
         # don't do anything if a panel is being minimized

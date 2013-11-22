@@ -22,6 +22,7 @@ __all__ = [
     "get_dataframes",
 ]
 
+
 def _ipython_active():
     """return true if in an active IPython session"""
     try:
@@ -41,20 +42,22 @@ try:
     from IPython.lib import guisupport, inputhook
 
     if IPython.__version__ >= "0.12":
-        from IPython.zmq import kernelapp, eventloops
+        from IPython.kernel.zmq import kernelapp, eventloops
         
     _in_ipython = _ipython_active()
 except ImportError:
     _in_ipython = False
 
 _wx_app = None
+
+
 def get_wx_app(redirect=False):
     global _wx_app
     if _wx_app is None:
         if _in_ipython:
             _wx_app = guisupport.get_app_wx()
             if IPython.__version__ >= "0.12":
-                if kernelapp.KernelApp.initialized():
+                if kernelapp.IPKernelApp.initialized():
                     eventloops.enable_gui("wx")
             inputhook.enable_wx(_wx_app)
             guisupport.start_event_loop_wx(_wx_app)
@@ -63,6 +66,8 @@ def get_wx_app(redirect=False):
     return _wx_app
 
 _frame = None
+
+
 def show(nodes=[], ctx=None, contexts=[], redirect=False, style=wx.DEFAULT_FRAME_STYLE):
     """
     Opens a new mdf viewer for a context and nodes, or adds
@@ -106,6 +111,7 @@ def show(nodes=[], ctx=None, contexts=[], redirect=False, style=wx.DEFAULT_FRAME
     if not _in_ipython:
         app.MainLoop()
 
+
 def updating_guard():
     """
     return an object that will stop the current frame from updating
@@ -114,6 +120,7 @@ def updating_guard():
     if _frame is None:
         return None
     return _frame.UpdatingGuard(_frame)
+
 
 def open(filename, redirect=False):
     """
@@ -135,10 +142,12 @@ def open(filename, redirect=False):
     else:
         app.MainLoop()
 
+
 def reset_viewer():
     """set the viewer to the current context - used by pylab"""
     if _frame:
         _frame.SetContext(_get_current_context())
+
 
 def get_selected():
     """
@@ -149,6 +158,7 @@ def get_selected():
     """
     assert _frame is not None, "MDF viewer not open"
     return _frame.GetSelectedContextsAndNodes()
+
 
 def get_dataframes(ctxs_and_nodes, start=None, end=None):
     """
