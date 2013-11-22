@@ -21,6 +21,11 @@ from IPython.core.magic import Magics, line_magic, magics_class
 from mdf import __all__ as __mdf_all__
 from mdf import *
 
+import sys
+if sys.version_info[0] > 2:
+    basestring = str
+    from functools import reduce
+
 __all__ = list(set(__mdf_all__).difference(["plot"]).union(["mdf_plot"]))
 
 mdf_plot = plot
@@ -41,7 +46,7 @@ try:
                     "export_dataframe"])
 
     _viewer_imported = True
-except ImportError, e:
+except ImportError:
     pass
 
 
@@ -50,11 +55,11 @@ class ShiftedResultsTuple(Sequence):
         # Use the namedtuple construction to apply validation and correction to field names
         tp = namedtuple("_ShiftedResults", field_names, rename=True)
         fdict = tp(*values)._asdict()
-        for k, v in fdict.iteritems():
+        for k, v in fdict.items():
             self.__setattr__(k, v)
 
         self.__items = fdict.values()
-        itemstext = ', '.join('%s=%s' % (name, value) for name, value in fdict.iteritems())
+        itemstext = ', '.join('%s=%s' % (name, value) for name, value in fdict.items())
         self.__reprtext = type(self).__name__ + ("(%s)" % itemstext)
 
     def __len__(self):
@@ -281,7 +286,7 @@ class MDFMagics(Magics):
         # with some optional keyword args, ie %mdf_df <start> <end> node, node, node, shifts=[{x:1}, {x:2}]
         args = arg_names = tokenize(parameter_s)
         args = [_try_eval(x, self.shell.user_global_ns, self.shell.user_ns) for x in args]
-        args = zip(arg_names, args)
+        args = list(zip(arg_names, args))
 
         start = None
         if len(args) > 0:
@@ -294,7 +299,7 @@ class MDFMagics(Magics):
             end = _parse_datetime(arg_name, self.shell.user_global_ns, self.shell.user_ns)
 
         # the final argument can be the number of processes to use
-        num_processes = None
+        num_processes = 0
         if len(args) > 0:
             arg_name, arg = args[-1]
             if isinstance(arg, basestring) and arg.startswith("||"):
@@ -556,16 +561,16 @@ class MDFMagics(Magics):
         # put the results in a dataframe with the ctx ids as columns
         nodes = sorted(varnode_values.keys(), key=lambda x: (sorted(x.categories), x.short_name))
         df = pd.DataFrame(data={}, index=nodes, columns=["Value", "Category"], dtype=object)
-        for node, value in varnode_values.iteritems():
+        for node, value in varnode_values.items():
             df["Value"][node] = value
             df["Category"][node] = ",".join(["%s" % (c or "") for c in sorted(node.categories)])
 
         if df.index.size == 0:
-            print "No matching dependencies found - has the node been evaluated?"
+            print ("No matching dependencies found - has the node been evaluated?")
             return
 
         df.index = [n.short_name for n in df.index]
-        print df.to_string(float_format=lambda x: "%.3f" % x)
+        print (df.to_string(float_format=lambda x: "%.3f" % x))
 
 
 def _parse_datetime(arg, global_ns={}, local_ns={}):
@@ -589,7 +594,7 @@ def _parse_datetime(arg, global_ns={}, local_ns={}):
 
 
 def mdf_pylab_help():
-    print """
+    print ("""
     === MDF Pylab ===
 
     MDF supports interactive evaluation by creating an 'ambient' context.
@@ -661,7 +666,7 @@ def mdf_pylab_help():
 
     %mdf_ctx
     # <ctx 1: 1991-05-01>
-    """
+    """)
 
 
 _loaded = False
@@ -679,7 +684,7 @@ def load_ipython_extension(ip):
 
         _loaded = True
 
-        print """Use the magic function %mdf_help for a list of commands"""
+        print ("""Use the magic function %mdf_help for a list of commands""")
 
 
 def _clean_varname(s):
