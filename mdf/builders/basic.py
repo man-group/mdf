@@ -284,7 +284,7 @@ class NodeTypeHandler(object):
         """
         columns = self.get_columns()
         df = pa.DataFrame(data={}, index=self._index, columns=columns, dtype=dtype)
-        for (d, l), value in self._data.iteritems():
+        for (d, l), value in self._data.items():
             df[l][d] = value
         return df
 
@@ -315,7 +315,7 @@ class NodeDictTypeHandler(NodeTypeHandler):
         # the set of labels can grow over time
         # and they reflect the big union of the dict keys
         self._labels = self._labels.union(map(str, value.keys()))
-        for k, v in value.iteritems():
+        for k, v in value.items():
             self._data[(date, str(k))] = v
 
 class NodeSeriesTypeHandler(NodeTypeHandler):
@@ -457,7 +457,7 @@ class DataFrameBuilder(object):
 
         if len(handler_dict) == 1:
             # if there's only one handler simply get the dataframe from it
-            handler = handler_dict.values()[0]
+            handler = next(iter(handler_dict.values()))
             result_df = handler.get_dataframe(dtype=dtype)
         else:
             # otherwise do an outer join of all the handlers' dataframes
@@ -499,7 +499,7 @@ class DataFrameBuilder(object):
         # Get all the columns for this node in all sub-contexts.
         columns = []
         ctx_ids = []
-        for (node_name, short_name, sub_ctx_id), handler in handler_dict.iteritems():
+        for (node_name, short_name, sub_ctx_id), handler in handler_dict.items():
             if node_name == node.name \
             and short_name == node.short_name:
                 columns.append(handler.get_columns())
