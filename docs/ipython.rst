@@ -9,16 +9,16 @@ MDF has a number of 'magic' functions that make it easier to use interactively i
 IPython 'magic' functions are ones that are invoked with a ``%`` before the name and are not available
 outside of IPython as they intended only for interactive work.
 
-To access the magic functions you first need to import everything from the `mdf.pylab` module::
+To access the magic functions you first need to import everything from the `mdf.lab` module::
 
-    from mdf.pylab import *
+    from mdf.lab import *
 
 This will print some brief text telling you that to get more help you need to use the ``%mdf_help``
 magic function::
 
     %mdf_help
 
-Once `mdf.pylab` is imported an 'ambient' context is created, so you can evaluate nodes
+Once `mdf.lab` is imported an 'ambient' context is created, so you can evaluate nodes
 without specifying any particular context - as you would inside a node function. For example::
 
     from random import random
