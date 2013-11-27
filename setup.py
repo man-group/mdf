@@ -1,3 +1,5 @@
+import os
+
 from setuptools import setup, find_packages
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
@@ -13,6 +15,9 @@ MDF - Data Flow Programming Toolkit
 version = '2.1'
 cython_profile = False
 cdebug = False
+
+with open("requirements.txt", "rb") as f:
+    requirements = f.read().split(os.linesep)
 
 if __name__ == "__main__":
 
@@ -37,34 +42,22 @@ if __name__ == "__main__":
 
     setup(
         name='mdf',
-        version = version,
+        version=version,
         description='MDF - Data Flow Programming Toolkit',
         long_description=long_description,
         zip_safe=False,
 
         # The icons directory is not a python package so find_packages will not find it.
         packages=find_packages() + ["mdf.viewer.icons"],
-        package_data = {'mdf.viewer.icons' : ['*.ico']},
-        test_suite = 'nose.collector',
+        package_data={'mdf.viewer.icons': ['*.ico']},
+        test_suite='nose.collector',
         setup_requires=[],
         scripts=glob("bin/*.py"),
-        install_requires=[
-            'Pyro4',
-            'Cython',
-            'numpy',
-            'wxPython',
-            'decorator',
-            'pandas',
-            'pyparsing',
-            'argparse',
-            'matplotlib',
-            'Pyro4',
-            'xlwt',
-        ],
+        install_requires=requirements,
         extras_require={
-           'win32' : ['pywin32', 'pyzmq'],
-           'linux2' : []
+            'win32': ['pywin32'],
+            'linux2': []
         },
-        cmdclass = {"build_ext": build_ext},
-        ext_modules = ext_modules,
+        cmdclass={"build_ext": build_ext},
+        ext_modules=ext_modules,
     )
