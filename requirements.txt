@@ -1,0 +1,11 @@
+Cython
+numpy
+pyzmq
+ipython
+Pyro4==4.14
+decorator
+pandas
+pyparsing
+argparse
+matplotlib
+xlwt
