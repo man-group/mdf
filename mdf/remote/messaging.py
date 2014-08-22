@@ -5,6 +5,7 @@ the main process.
 import os
 import logging
 import sys
+import atexit
 from decorator import decorator
 from collections import namedtuple
 from .serializer import Serializer
@@ -58,6 +59,10 @@ def _init():
                                       sink=sink,
                                       source=source)
     _initialized = True
+    @atexit.register
+    def cleanup_sockets():
+        _conn_details.sink.close()
+
 
 @decorator
 def needs_zmq(func, *args, **kwargs):
