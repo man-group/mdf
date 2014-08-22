@@ -53,7 +53,7 @@ class RemoteTest(unittest.TestCase):
         for ctx in shifted_ctxs:
             df = df_builder.get_dataframe(ctx)
             sync_df = sync_df_builder.get_dataframe(ctx)
-            self.assertEquals(df, sync_df)
+            assert df.equals(sync_df)
 
         print ("Took %fs using %d processes" % ((end_time - start_time), num_processes))
         print ("Took %fs using 1 process" % (sync_end_time - sync_start_time))

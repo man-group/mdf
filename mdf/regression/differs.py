@@ -287,8 +287,8 @@ class DataFrameDiffer(DataFrameBuilder, Differ):
 
             # don't include differences where both sides are NaN or 0.0
             try:
-                mask &= ~((lhs_df == 0.0) and (rhs_df == 0.0)).values
-                mask &= ~(np.isnan(lhs_df) and np.isnan(rhs_df)).values
+                mask &= ~((lhs_df == 0.0) & (rhs_df == 0.0)).values
+                mask &= ~(np.isnan(lhs_df) & np.isnan(rhs_df)).values
             except TypeError:
                 pass
 

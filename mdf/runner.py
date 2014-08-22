@@ -91,8 +91,8 @@ def run(date_range,
 
     # Attempt to guess the tzinfo from the date range if one isn't specified explicitly
     if tzinfo is None:
-        if isinstance(date_range, pa.DateRange):
-            # pa.DateRange has a tzinfo attribute
+        if isinstance(date_range, pa.DatetimeIndex):
+            # pa.DatetimeIndex has a tzinfo attribute
             tzinfo = date_range.tzinfo
         elif isinstance(date_range, (list, tuple)):
             # In a list of dates, look at the first item

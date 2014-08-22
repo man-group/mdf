@@ -222,7 +222,7 @@ class MDFMagics(Magics):
                 df_ctx = df_ctx.shift(shift_set=shift_set)
 
         df_builder = DataFrameBuilder(nodes, filter=True)
-        date_range = pd.DateRange(cur_ctx.get_date(), end_date, offset=self.__timestep)
+        date_range = pd.DatetimeIndex(start=cur_ctx.get_date(), end=end_date, freq=self.__timestep)
         for dt in date_range:
             root_ctx.set_date(dt)
             df_builder(dt, df_ctx)
@@ -374,7 +374,7 @@ class MDFMagics(Magics):
         callbacks.extend(df_builders)
 
         root_ctx = curr_ctx.get_parent() or curr_ctx
-        date_range = pd.DateRange(start, end, offset=self.__timestep)
+        date_range = pd.DatetimeIndex(start=start, end=end, freq=self.__timestep)
 
         # Add a progress bar to the callbacks
         callbacks.append(ProgressBar(date_range[0], date_range[-1]))
