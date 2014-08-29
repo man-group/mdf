@@ -12,6 +12,17 @@ from mdf import evalnode
 def pid_test():
     return os.getpid()
 
+# used in test_regression_remnote_server_init
+startup_data = {"cfg":{"paramA":"A"}}
+def remote_server_init_func(startup_data):
+    """
+    startup_data is a dict constructed by _start_pyro_subprocess
+    which will be passed to this callback function on the remote process.
+    startup_data will contain additional startup_data passed to mdf.regression.[get_contexts|run]
+    """
+    _cfg = startup_data["cfg"]
+    assert _cfg["paramA"], "A"
+
 class RemoteTest(unittest.TestCase):
 
     def test_regression_contexts(self):
@@ -27,6 +38,15 @@ class RemoteTest(unittest.TestCase):
     
         self.assertNotEqual(lhs_pid, rhs_pid)
         
+    def test_regression_remnote_server_init_func(self):
+        """
+        simple test that creates two subprocesses and checks the
+        pids are different
+        """
+        lhs, rhs = mdf.regression.get_contexts(None, None,
+                                               init_func=remote_server_init_func,
+                                               startup_data=startup_data)
+
     def test_df_differ(self):
         """
         tests the DataFrameDiffer

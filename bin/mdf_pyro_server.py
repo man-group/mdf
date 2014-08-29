@@ -4,6 +4,8 @@ Runs a Pyro server for remote evaluation of mdf nodes.
 import sys
 import logging
 import pickle
+import marshal
+import types
 
 _startup_data = None
 if __name__ == "__main__":
@@ -18,6 +20,11 @@ if __name__ == "__main__":
 
         for modulename in _startup_data.get("modules", []):
             __import__(modulename)
+        init_func_s = _startup_data.get("init_func", None)
+        if init_func_s is not None:
+            init_func_code = marshal.loads(init_func_s)
+            init_func = types.FunctionType(init_func_code, globals(), "_mdf_pyro_server_custom_init_func")
+            init_func(_startup_data)
 
 # these imports are deliberately after the --fork code as sys.path could be modified
 import mdf.remote
