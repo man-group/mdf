@@ -42,7 +42,6 @@ def save_context(ctx, filename, start_date=None, end_date=None):
     if not isinstance(filename, basestring):
         fh = filename
         close_fh = False
-        assert not bat_filename, "Can't write .bat file when 'filename' is a file handle"
     else:
         # use w+b to workaround problem writing large chunks of data in a single call to fwrite
         # http://support.microsoft.com/default.aspx?scid=kb;en-us;899149
