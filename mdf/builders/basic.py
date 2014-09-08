@@ -29,9 +29,9 @@ def _get_labels(node, label=None, value=None):
             label = _get_labels(node)[0]
 
         # if value is a list return a label for each element
-        if isinstance(value, (tuple, list, np.ndarray, pa.Series, pa.Index)):
+        if isinstance(value, (tuple, list, np.ndarray, pa.core.generic.NDFrame, pa.Index)):
             # if the label is a list already pad it to the right size
-            if isinstance(label, (tuple, list, np.ndarray, pa.Series, pa.Index)):
+            if isinstance(label, (tuple, list, np.ndarray, pa.core.generic.NDFrame, pa.Index)):
                 label = list(label)
                 if len(label) < len(value):
                     label += ["%s.%d" % (label, i) for i in xrange(len(label), len(value))]
@@ -43,13 +43,13 @@ def _get_labels(node, label=None, value=None):
             return ["%s.%d" % (label, i) for i in xrange(len(value))]
 
         # if value is not a list return a single label
-        if isinstance(label, (tuple, list, np.ndarray)):
+        if isinstance(label, (tuple, list, np.ndarray, pa.core.generic.NDFrame)):
             return list(label[:1])
         return [label]
 
     # if there's no value but a label, assume the value is a scalar and return a single label
     if label is not None:
-        if isinstance(label, (tuple, list, np.ndarray)):
+        if isinstance(label, (tuple, list, np.ndarray, pa.core.generic.NDFrame)):
             return list(label[:1])
         return [label]
 
@@ -227,7 +227,7 @@ class CSVWriter(object):
 
                 if isinstance(value, (basestring, int, float, bool, datetime.date)):
                     self.handlers.append(self._write_basetype)
-                elif isinstance(value, (list, tuple, np.ndarray, pa.Index)):
+                elif isinstance(value, (list, tuple, np.ndarray, pa.Index, pa.core.generic.NDFrame)):
                     self.handlers.append(self._write_list)
                 elif isinstance(value, pa.Series):
                     self.handlers.append(self._write_series)
@@ -404,7 +404,7 @@ class DataFrameBuilder(object):
                     handler = NodeDictTypeHandler(node, filter=self.filter)
                 elif isinstance(node_value, pa.Series):
                     handler = NodeSeriesTypeHandler(node, filter=self.filter)
-                elif isinstance(node_value, (list, tuple, deque, np.ndarray, pa.Index)):
+                elif isinstance(node_value, (list, tuple, deque, np.ndarray, pa.Index, pa.core.generic.NDFrame)):
                     handler = NodeListTypeHandler(node, filter=self.filter)
                 else:
                     raise Exception("Unhandled type %s for node %s" % (type(node_value), node))

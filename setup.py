@@ -12,7 +12,7 @@ MDF - Data Flow Programming Toolkit
 
 """
 
-version = '2.2'
+version = '2.2.1'
 cython_profile = False
 cdebug = False
 
