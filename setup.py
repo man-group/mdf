@@ -16,7 +16,7 @@ version = '2.2.1'
 cython_profile = False
 cdebug = False
 
-with open("requirements.txt", "rb") as f:
+with open("requirements.txt", "r") as f:
     requirements = f.read().split(os.linesep)
 
 if __name__ == "__main__":

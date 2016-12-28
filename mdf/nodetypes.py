@@ -32,6 +32,15 @@ def _dict_iteritems(d):
         return iter(d.items())
     return d.iteritems()
 
+
+# strings are used as dict lookups using nans and np.float64 can be problematic
+_special_floats = cython.declare(dict, {
+    str(np.nan): "1.#QNAN",
+    str(np.inf): "1.#INF",
+    str(-np.inf): "-1.#INF"
+})
+
+
 class MDFCustomNodeIteratorFactory(MDFIteratorFactory):
 
     def __init__(self, custom_node):
@@ -478,11 +487,22 @@ class MDFCustomNodeMethod(object):
         derived_node_key = cython.declare(tuple)
         derived_node = cython.declare(MDFEvalNode)
 
+        # replace any special floats with string versions so they compare correctly
+        # when looking for an existing node
+        kwargs_in_key = []
+        for key, value in _dict_iteritems(nodetype_func_kwargs):
+            if value != value:
+                try:
+                    value = _special_floats[str(value)]
+                except KeyError:
+                    value = "1.#%s" % value
+            kwargs_in_key.append((key, value))
+
         derived_node_key = (self._node_type_func,
                             self._node_cls,
                             filter,
                             category,
-                            frozenset(_dict_iteritems(nodetype_func_kwargs)))
+                            frozenset(kwargs_in_key))
         try:
             derived_node = self._derived_nodes[derived_node_key]
         except KeyError:

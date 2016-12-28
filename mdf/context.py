@@ -583,7 +583,7 @@ class MDFContext(object):
         return self.get_date()
 
     @now.setter
-    def now_setter(self, value):
+    def now(self, value):
         """see set_date"""
         self.set_date(value)
 
@@ -837,6 +837,8 @@ class MDFContext(object):
         _current_contexts[cookie.thread_id] = cookie.prev_context
 
     def _get_node_value(self, node, calling_node=None, prev_ctx=None, thread_id=None):
+        alt_ctx = cython.declare(MDFContext)
+
         # activate the context
         cookie = self._activate(prev_ctx, thread_id)
         prev_ctx = cookie.prev_context
@@ -861,7 +863,6 @@ class MDFContext(object):
                 # get the context this valuation actually corresponds to
                 # (this could be something other than self if self is
                 #  shifted and this node doesn't depend on the shift)
-                alt_ctx = cython.declare(MDFContext)
                 alt_ctx = node.get_alt_context(self)
 
                 # add this node to the calling node's dependencies in the alt context

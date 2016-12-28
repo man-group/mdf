@@ -925,6 +925,7 @@ class MDFNode(MDFNodeBase):
         # get the alt context this node should be evaluated in (i.e. the least shifted context
         # with all the shifts this node depends on).
         alt_ctx = cython.declare(MDFContext)
+        new_alt_ctx = cython.declare(MDFContext)
         alt_ctx = self.get_alt_context(ctx)
 
         # check the alt_ctx hasn't changed if it's been reset since last time
@@ -959,7 +960,6 @@ class MDFNode(MDFNodeBase):
 
         finally:
             # If nothing's changed this is a cheap operation as the alt_context is cached
-            new_alt_ctx = cython.declare(MDFContext)
             new_alt_ctx = self.get_alt_context(ctx)
 
             # check the alt_context hasn't changed after getting the value
